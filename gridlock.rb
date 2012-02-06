@@ -64,9 +64,21 @@ module GridLock
   end
 
   class Manager
-    def initialize(service_key)
+    SmallGridSize = 13
+    LargeGridSize = 26
+
+    def initialize(service_key, large=false)
       @service_key = service_key
       @master = nil
+      if large
+        @grid_size = LargeGridSize
+      else
+        @grid_size = SmallGridSize
+      end
+    end
+
+    def small?
+      @grid_size == SmallGridSize
     end
 
     def prompt
@@ -76,29 +88,32 @@ module GridLock
       end
     end
 
-    def self.border_array(grid_size)
+    def border_array
       list = %W{a b c d e f g h i j k l m n o p q r s t u v w x y z}
       result = Array.new
-      list.each do |letter|
-        result << letter.capitalize * 4
-        if result.length >= grid_size
-          break
+      if small?
+        list.each_slice(2) do |first,second|
+          result << "-#{first.capitalize}#{second.capitalize}-"
+        end
+      else
+        list.each do |letter|
+          result << "-#{letter.capitalize}#{letter.capitalize}-"
         end
       end
       result
     end
     
     Sep = ' | '
+
     def display
-      grid = 13
       token_stream = TokenStream.new(master_pass, @service_key)
-      border_items = self.class.border_array(grid)
+      border_items = border_array
       print '       '
       puts border_items.join(Sep)
       border_items.each do |item|
         print "#{item}#{Sep}"
         row = Array.new
-        grid.times { row << token_stream.yield_token }
+        @grid_size.times { row << token_stream.yield_token }
         a = row.join(Sep)
         puts a
       end
