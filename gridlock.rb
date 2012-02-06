@@ -3,6 +3,7 @@
 require 'openssl'
 require 'rubygems'
 require 'highline/import'
+require 'colored'
 
 module GridLock
 
@@ -10,6 +11,7 @@ module GridLock
 
   class TokenStream
     HashAlg = 'sha512'
+    TokenSize = 4
 
     @@letters = nil
     def self.letters
@@ -22,12 +24,11 @@ module GridLock
       @@letters
     end
 
-    def initialize(master, service_key, token_size=4)
+    def initialize(master, service_key)
       @master = master
       @service_key = service_key
       @index = @master.length + @service_key.length
       @tokens = Array.new
-      @token_size = token_size
     end
 
     def yield_token
@@ -54,7 +55,7 @@ module GridLock
           list = self.class.letters[:vowels]
         end
         intermediate << list[b % list.length]
-        if intermediate.length == @token_size
+        if intermediate.length == TokenSize
           @tokens << intermediate
           intermediate = ''
         end
@@ -66,8 +67,9 @@ module GridLock
   class Manager
     SmallGridSize = 13
     LargeGridSize = 26
+    Sep = ' | '
 
-    def initialize(service_key, large=false)
+    def initialize(service_key, large=true)
       @service_key = service_key
       @master = nil
       if large
@@ -103,19 +105,23 @@ module GridLock
       result
     end
     
-    Sep = ' | '
-
     def display
       token_stream = TokenStream.new(master_pass, @service_key)
       border_items = border_array
-      print '       '
+      print ' ' * (TokenStream::TokenSize + Sep.length)
       puts border_items.join(Sep)
+      odd = true
       border_items.each do |item|
+        odd = ! odd
         print "#{item}#{Sep}"
         row = Array.new
         @grid_size.times { row << token_stream.yield_token }
         a = row.join(Sep)
-        puts a
+        if odd
+          puts a.yellow
+        else
+          puts a.green
+        end
       end
     end
 
