@@ -7,7 +7,8 @@ require 'colored'
 
 module GridLock
 
-  class MasterPasswordError < StandardError; end
+  class PasswordLengthError < StandardError; end
+  class PasswordMatchError < StandardError; end
 
   class TokenStream
     HashAlg = 'sha512'
@@ -69,7 +70,7 @@ module GridLock
     LargeGridSize = 26
     Sep = ' | '
 
-    def initialize(service_key, large=true)
+    def initialize(service_key, large=false)
       @service_key = service_key
       @master = nil
       if large
@@ -84,22 +85,26 @@ module GridLock
     end
 
     def prompt
-      @master = ask('Enter the master password: ') {|q| q.echo = '*'}
+      @master = ask('  Enter the master password: ') {|q| q.echo = '*'}
       if @master.nil? or @master.length == 0
-        raise(MasterPasswordError, 'Must choose a master password other than the empty string.')
+        raise(PasswordLengthError, 'Must choose a master password other than the empty string.')
+      end
+      verify = ask('Confirm the master password: ') {|q| q.echo = '*'}
+      unless @master == verify
+        raise(PasswordMatchError, 'Passwords do not match. Error.')
       end
     end
 
     def border_array
-      list = %W{a b c d e f g h i j k l m n o p q r s t u v w x y z}
+      list = %W{A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
       result = Array.new
       if small?
         list.each_slice(2) do |first,second|
-          result << "-#{first.capitalize}#{second.capitalize}-"
+          result << "-#{first}#{second}-"
         end
       else
         list.each do |letter|
-          result << "-#{letter.capitalize}#{letter.capitalize}-"
+          result << "-#{letter}#{letter}-"
         end
       end
       result
