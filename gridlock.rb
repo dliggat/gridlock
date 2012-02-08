@@ -7,8 +7,8 @@ require 'colored'
 
 module GridLock
 
-  class PasswordLengthError < StandardError; end
-  class PasswordMatchError < StandardError; end
+  class PassphraseLengthError < StandardError; end
+  class PassphraseMatchError < StandardError; end
 
   class TokenStream
     HashAlg = 'sha512'
@@ -85,13 +85,13 @@ module GridLock
     end
 
     def prompt
-      @master = ask('  Enter the master password: ') {|q| q.echo = '*'}
+      @master = ask('Enter your master grid-passphrase: ') {|q| q.echo = '*'}
       if @master.nil? or @master.length == 0
-        raise(PasswordLengthError, 'Must choose a master password other than the empty string.')
+        raise(PassphraseLengthError, 'The master grid-passphrase may not be the empty string.')
       end
-      verify = ask('Confirm the master password: ') {|q| q.echo = '*'}
+      verify = ask('                          Confirm: ') {|q| q.echo = '*'}
       unless @master == verify
-        raise(PasswordMatchError, 'Passwords do not match. Error.')
+        raise(PassphraseMatchError, 'Passphrases do not match. Error.')
       end
     end
 

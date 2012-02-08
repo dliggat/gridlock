@@ -15,7 +15,7 @@ describe GridLock::Manager do
     service = 'ymail.com'
     obj = GridLock::Manager.new(service)
     obj.should_receive(:ask).and_return('')
-    lambda{obj.master_pass}.should raise_error(GridLock::PasswordLengthError)
+    lambda{obj.master_pass}.should raise_error(GridLock::PassphraseLengthError)
   end
 
   it 'should raise on receiving a verification password that does not match' do
@@ -23,7 +23,7 @@ describe GridLock::Manager do
     obj = GridLock::Manager.new(service)
     obj.should_receive(:ask).and_return('abc')
     obj.should_receive(:ask).and_return('def')
-    lambda{obj.master_pass}.should raise_error(GridLock::PasswordMatchError)
+    lambda{obj.master_pass}.should raise_error(GridLock::PassphraseMatchError)
   end
 end
 
