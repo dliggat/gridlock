@@ -43,13 +43,24 @@ describe GridLock::TokenStream do
     service = 'ymail.com'
     obj = GridLock::TokenStream.new('password', service)
     h = Hash.new(0)
-    100000.times do
+    Trials = 100000
+    Trials.times do
       token = obj.yield_token
       token.each_char do |char|
-        h[char] +=1
+        h[char] += 1
       end
     end
-    puts h.inspect
+    h.each do |letter,count|
+      if obj.class.letters[:vowels].include?(letter)
+        # TODO: Make this a bit more statistically rigorous.
+        # Note, we multiply by 1/2 because vowels and consonants are considered separately.
+        count.should be_within(800).
+          of(0.5 * Trials * GridLock::TokenStream::TokenSize / obj.class.letters[:vowels].length)
+      else
+        count.should be_within(800).
+          of(0.5 * Trials * GridLock::TokenStream::TokenSize / obj.class.letters[:cons].length)
+      end
+    end
   end
 end
 
