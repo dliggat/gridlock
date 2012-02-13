@@ -1,9 +1,9 @@
 #!/usr/bin/ruby
 
 require 'openssl'
+require 'stringio'
 require 'rubygems'
 require 'highline/import'
-require 'colored'
 
 module GridLock
 
@@ -66,22 +66,18 @@ module GridLock
   end
 
   class Manager
-    SmallGridSize = 13
-    LargeGridSize = 26
     Sep = ' | '
+    Letters = %W{A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
+    Columns = 13
 
-    def initialize(service_key, large=false)
+    def initialize(service_key, large=true)
       @service_key = service_key
       @master = nil
-      if large
-        @grid_size = LargeGridSize
-      else
-        @grid_size = SmallGridSize
-      end
+      @large = large
     end
 
-    def small?
-      @grid_size == SmallGridSize
+    def large?
+      @large
     end
 
     def prompt
@@ -95,39 +91,24 @@ module GridLock
       end
     end
 
-    def border_array
-      list = %W{A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
+    def row_titles_array
       result = Array.new
-      if small?
-        list.each_slice(2) do |first,second|
-          result << "-#{first}#{second}-"
-        end
+      if large?
+        Letters.each {|letter| result << "-#{letter}#{letter}-"}
       else
-        list.each do |letter|
-          result << "-#{letter}#{letter}-"
-        end
+        Letters.each_slice(2) {|first,second| result << "-#{first}#{second}-"}
       end
+      result
+    end
+
+    def column_titles_array
+      result = Array.new
+      1.upto(Columns) {|i| result << "-%02d-" % i}
       result
     end
     
     def display
-      token_stream = TokenStream.new(master_pass, @service_key)
-      border_items = border_array
-      print ' ' * (TokenStream::TokenSize + Sep.length)
-      puts border_items.join(Sep)
-      odd = true
-      border_items.each do |item|
-        odd = ! odd
-        print "#{item}#{Sep}"
-        row = Array.new
-        @grid_size.times { row << token_stream.yield_token }
-        a = row.join(Sep)
-        if odd
-          puts a.yellow
-        else
-          puts a.green
-        end
-      end
+      puts generate_output
     end
 
     def master_pass
@@ -135,6 +116,27 @@ module GridLock
         prompt
       end
       @master
+    end
+    
+    private
+    def generate_output
+      s = StringIO.new
+      token_stream = TokenStream.new(master_pass, @service_key)
+      # Print the headers, starting with some whitespace and boxing.
+      s.print ' ' * (TokenStream::TokenSize + Sep.length)
+      s.puts column_titles_array.join(Sep)
+      s.print ' ' * (TokenStream::TokenSize + Sep.length - 1)
+      s.puts '-' * (TokenStream::TokenSize * Columns +
+                    Sep.length * (Columns - 1) + 1)
+      row_titles_array.each_with_index do |item, index|
+        s.print '%s%s' % [item, Sep]
+        row = Array.new
+        column_titles_array.each do
+          row << token_stream.yield_token
+        end
+        s.puts row.join(Sep)
+      end
+      s.string
     end
   end
 
