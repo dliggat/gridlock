@@ -70,14 +70,9 @@ module GridLock
     Letters = %W{A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
     Columns = 13
 
-    def initialize(service_key, large=true)
+    def initialize(service_key)
       @service_key = service_key
       @master = nil
-      @large = large
-    end
-
-    def large?
-      @large
     end
 
     def prompt
@@ -93,11 +88,7 @@ module GridLock
 
     def row_titles_array
       result = Array.new
-      if large?
-        Letters.each {|letter| result << "-#{letter}#{letter}-"}
-      else
-        Letters.each_slice(2) {|first,second| result << "-#{first}#{second}-"}
-      end
+      Letters.each {|letter| result << "-#{letter}#{letter}-"}
       result
     end
 
